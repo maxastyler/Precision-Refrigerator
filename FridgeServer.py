@@ -5,11 +5,18 @@ import socket
 import struct
 import argparse
 import select
+import configparser
+from helpers import *
 
-FRIDGE_PORT=10000
-MESSAGE_SIZE=16
-INITIAL_TARGET_TEMP=10
-DAEMON_DELAY=0.1 #Time that the daemon waits for new connections to the socket
+config=configparser.SafeConfigParser()
+config.read('fridge.config')
+
+settings=ConfigSectionMap("FridgeServer", config)
+
+FRIDGE_PORT=int(settings['port'])
+MESSAGE_SIZE=int(settings['message_size'])
+INITIAL_TARGET_TEMP=float(settings['initial_target_temp'])
+DAEMON_DELAY=float(settings['daemon_delay']) #Time that the daemon waits for new connections to the socket
 usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt the daemon"
 
 def send_message(message):
@@ -35,6 +42,7 @@ class FridgeServer:
     def get_message(self, connection):
         try:
             data=connection.recv(MESSAGE_SIZE)
+            if args.verbose: print("Reading data from {}".format(connection))
             return data
         except:
             return "err"
@@ -51,6 +59,7 @@ class FridgeServer:
             sock.bind(server_address)
             
             sock.listen(4)
+            if args.verbose: print("Socket listening on {}".format(FRIDGE_PORT))
             read_list=[sock]
 
             while self.running:
@@ -59,7 +68,7 @@ class FridgeServer:
                     if s is sock:
                         message=""
                         connection, client_address=sock.accept()
-                        print("Connection from {}".format(client_address))
+                        if args.verbose: print("Connection from {}".format(client_address))
                         read_list.append(connection)
                     else:
                         try:
@@ -69,21 +78,26 @@ class FridgeServer:
                             except (UnicodeDecodeError, AttributeError) as e:
                                 message="temp"
                             if message=='stop':
+                                if args.verbose: print("Shutting down server")
                                 self.quit()
                             elif message=='gct':
                                 s.sendall(struct.pack('f', self.current_temp))
                             elif message=='gtt':
                                 s.sendall(struct.pack('f', self.target_temp))
                             else:
-                                self.target_temp=struct.unpack('f', data)[0]
+                                new_temp=struct.unpack('f', data)[0]
+                                if args.verbose: print("Setting new temperature {}".format(new_temp))
+                                self.target_temp=new_temp
                         finally:
                             s.close()
                             read_list.remove(s)
         finally:
+            if args.verbose: print("Closing socket")
             sock.close()
 
     def daemonise():
         with daemon.DaemonContext():
+            if args.verbose: print("Daemonising")
             a=FridgeServer()
             a.run()
 
@@ -91,6 +105,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description='Daemon to control Refrigerator')
     parser.add_argument('option', choices=['start', 'stop'], help='Option to give the daemon. Can be start or stop')
     parser.add_argument('--no-daemon', '-nd', action='store_true', help='Flag given when starting to keep the process in the terminal. No forking')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
     args=parser.parse_args()
     if args.option=="start":
         if not args.no_daemon:
