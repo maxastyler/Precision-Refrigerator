@@ -48,7 +48,7 @@ class FridgeServer:
         try:
             sock.bind(server_address)
             
-            sock.listen(1)
+            sock.listen(4)
 
             while self.running:
                 message=""
