@@ -37,9 +37,13 @@ class GraphFrame(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.f, self)
         self.canvas.show()
         self.canvas.get_tk_widget().grid(row=0, column=0, columnspan=3)
+        self.entry=tk.Entry(self)
+        self.entry.grid(row=1, column=1)
         self.b={}
         self.b['clear']=tk.Button(self, text='Reset', command=self.reset_graph)
-        self.b['clear'].grid(row=1, column=0, columnspan=3)
+        self.b['clear'].grid(row=1, column=0)
+        self.b['save']=tk.Button(self, text='Save data', command=lambda:np.savetxt(self.entry.get(), np.array([self.x_values, self.y_values, self.x_t_values, self.y_t_values])))
+        self.b['save'].grid(row=1, column=2)
 
     def update_graph(self):
         self.line1.set_ydata(self.y_values)
