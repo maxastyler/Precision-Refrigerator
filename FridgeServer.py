@@ -6,6 +6,7 @@ import struct
 import argparse
 import select
 import configparser
+from time import sleep
 from helpers import *
 
 config=configparser.SafeConfigParser()
@@ -91,6 +92,8 @@ class FridgeServer:
                         finally:
                             s.close()
                             read_list.remove(s)
+        except OSError as e:
+            if args.verbose: print("Error: {}\nTry restarting the daemon".format(e))    
         finally:
             if args.verbose: print("Closing socket")
             sock.close()
@@ -101,9 +104,10 @@ class FridgeServer:
             a=FridgeServer()
             a.run()
 
+
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description='Daemon to control Refrigerator')
-    parser.add_argument('option', choices=['start', 'stop'], help='Option to give the daemon. Can be start or stop')
+    parser.add_argument('option', choices=['start', 'restart', 'stop'], help='Option to give the daemon')
     parser.add_argument('--no-daemon', '-nd', action='store_true', help='Flag given when starting to keep the process in the terminal. No forking')
     parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
     args=parser.parse_args()
@@ -115,3 +119,11 @@ if __name__=='__main__':
             a.run()
     elif args.option=="stop":
         send_message("stop")
+    elif args.option=="restart":
+        send_message("stop")
+        sleep(2)
+        if not args.no_daemon:
+            FridgeServer.daemonise()
+        else:
+            a=FridgeServer()
+            a.run()
