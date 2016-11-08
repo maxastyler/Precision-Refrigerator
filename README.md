@@ -7,5 +7,5 @@ Run the daemon, FridgeServer.py and connect with some program using the methods 
 
 Written by Bonar Robb and Max Tyler for the DAH course projec
 
-#To do
-1. Don't block server while waiting for connections
+##To do
+1. ~~Don't block server while waiting for connections~~
