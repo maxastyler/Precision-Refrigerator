@@ -20,9 +20,9 @@ INITIAL_TARGET_TEMP=float(settings['initial_target_temp'])
 DAEMON_DELAY=float(settings['daemon_delay']) #Time that the daemon waits for new connections to the socket
 usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt the daemon"
 
-def send_message(message):
+def send_message(message, port=FRIDGE_PORT):
     sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address=('localhost', FRIDGE_PORT)
+    server_address=('localhost', port)
     try:
         sock.connect(server_address)
     except:
@@ -92,11 +92,48 @@ class FridgeServer:
                         finally:
                             s.close()
                             read_list.remove(s)
+                self.update_peltier()
         except OSError as e:
             if args.verbose: print("Error: {}\nTry restarting the daemon".format(e))    
         finally:
             if args.verbose: print("Closing socket")
             sock.close()
+
+    def update_peltier(self):
+        cur_tar_temp=self.target_temp
+        try:
+            sock=socket.create_connection(('localhost', 10001))
+            sock.sendall("gct".encode())
+            self.current_temp=struct.unpack('f', sock.recv(MESSAGE_SIZE))[0]
+        except:
+            pass
+        finally:
+            try:
+                sock.close()
+            except: 
+                pass
+        try:
+            sock=socket.create_connection(('localhost', 10001))
+            sock.sendall("gtt".encode())
+            cur_tar_temp=struct.unpack('f', sock.recv(MESSAGE_SIZE))[0]
+        except:
+            pass
+        finally:
+            try:
+                sock.close()
+            except:
+                pass
+        if self.target_temp!=cur_tar_temp:
+            try:
+                sock2=socket.create_connection(('localhost', 10001))
+                sock2.sendall(struct.pack('f', self.target_temp))
+            except:
+                pass
+            finally:
+                try:
+                    sock2.close()
+                except:
+                    pass
 
     def daemonise():
         with daemon.DaemonContext():
