@@ -4,10 +4,12 @@ import sys
 import socket
 import struct
 import argparse
+import select
 
 FRIDGE_PORT=10000
 MESSAGE_SIZE=16
 INITIAL_TARGET_TEMP=10
+DAEMON_DELAY=0.1 #Time that the daemon waits for new connections to the socket
 usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt the daemon"
 
 def send_message(message):
@@ -49,26 +51,34 @@ class FridgeServer:
             sock.bind(server_address)
             
             sock.listen(4)
+            read_list=[sock]
 
             while self.running:
-                message=""
-                connection, client_address=sock.accept()
-                try:
-                    data=self.get_message(connection)
-                    try:
-                        message=data.decode('UTF-8')
-                    except (UnicodeDecodeError, AttributeError) as e:
-                        message="temp"
-                    if message=='stop':
-                        self.quit()
-                    elif message=='gct':
-                        connection.sendall(struct.pack('f', self.current_temp))
-                    elif message=='gtt':
-                        connection.sendall(struct.pack('f', self.target_temp))
+                readable, writable, errored = select.select(read_list, [], [],DAEMON_DELAY)
+                for s in readable:
+                    if s is sock:
+                        message=""
+                        connection, client_address=sock.accept()
+                        print("Connection from {}".format(client_address))
+                        read_list.append(connection)
                     else:
-                        self.target_temp=struct.unpack('f', data)[0]
-                finally:
-                    connection.close()
+                        try:
+                            data=self.get_message(s)
+                            try:
+                                message=data.decode('UTF-8')
+                            except (UnicodeDecodeError, AttributeError) as e:
+                                message="temp"
+                            if message=='stop':
+                                self.quit()
+                            elif message=='gct':
+                                s.sendall(struct.pack('f', self.current_temp))
+                            elif message=='gtt':
+                                s.sendall(struct.pack('f', self.target_temp))
+                            else:
+                                self.target_temp=struct.unpack('f', data)[0]
+                        finally:
+                            s.close()
+                            read_list.remove(s)
         finally:
             sock.close()
 
