@@ -38,7 +38,7 @@ class FridgeServer:
     def __init__(self):
         self.running=False
         self.current_temp=0
-        self.target_temp=INITIAL_TARGET_TEMP
+        self.target_temp=args.target_temp
 
     def get_message(self, connection):
         try:
@@ -147,6 +147,7 @@ if __name__=='__main__':
     parser.add_argument('option', choices=['start', 'restart', 'stop'], help='Option to give the daemon')
     parser.add_argument('--no-daemon', '-nd', action='store_true', help='Flag given when starting to keep the process in the terminal. No forking')
     parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
+    parser.add_argument('--target-temp', '-t', type=float, default=INITIAL_TARGET_TEMP, help='Set the initial target temp for the daemon')
     args=parser.parse_args()
     if args.option=="start":
         if not args.no_daemon:
