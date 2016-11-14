@@ -5,9 +5,10 @@ import struct
 
 from FridgeServer import *
 
-def set_temp(temp):
+def set_temp(temp, host, port):
+    returnval=None
     try:
-        sock=socket.create_connection(('localhost', FRIDGE_PORT))
+        sock=socket.create_connection((host, port))
         sock.sendall(struct.pack('f', temp))
         sock.close()
         returnval=0
@@ -16,17 +17,18 @@ def set_temp(temp):
     finally:
         return returnval
 
-def get_current_temp():
-    return get_command('gct')
+def get_current_temp(host, port):
+    return get_command('gct', host, port)
 
-def get_target_temp():
-    return get_command('gtt')
+def get_target_temp(host, port):
+    return get_command('gtt', host, port)
 
-def get_command(cmd):
+def get_command(cmd, host, port):
     cmd=cmd.encode()
     data=None
+    returnval=None
     try:
-        sock=socket.create_connection(('localhost', FRIDGE_PORT))
+        sock=socket.create_connection((host, port))
         sock.sendall(cmd)
         data=struct.unpack('f', sock.recv(MESSAGE_SIZE))[0]
         sock.close()

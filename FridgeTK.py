@@ -4,17 +4,23 @@ from FridgeClient import *
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import configparser
 plt.ion()
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 from time import time
+from socket import gethostname
 
 #Interval with which to update the GUI values
 UPDATE_INTERVAL=1000
 errors={}
 errors[-1]="Connection Error (Is FridgeServer running?)"
 
+config=configparser.SafeConfigParser()
+config.read('fridge.config')
+
+settings=ConfigSectionMap("FridgeServer", config)
 
 class GraphFrame(tk.Frame):
     def __init__(self, parent):
@@ -64,6 +70,10 @@ class GraphFrame(tk.Frame):
 
 class App(tk.Frame):
     def __init__(self, root):
+        self.port_num=int(settings['port'])
+        self.host_name=gethostname()
+
+
         self.root=root
         super().__init__(root)
         self.init_UI()
@@ -73,7 +83,7 @@ class App(tk.Frame):
         self.root.title="FridgeTK"
         self.pack(fill=tk.BOTH, expand=True)
 
-        self.grid_rowconfigure(5, weight=1)
+        self.grid_rowconfigure(7, weight=1)
         self.grid_columnconfigure(3, weight=1)
 
         self.frame1()
@@ -82,32 +92,57 @@ class App(tk.Frame):
 
 
     def frame1(self):
+
+        
+
         self.labels={}
 
+        self.labels['server_settings']=tk.Label(self, text="Server settings: [Hostname: {}, Port: {}]".format(self.host_name, self.port_num))
+        self.labels['server_settings'].grid(row=0, column=0, columnspan=3)
+        
+        self.host=tk.Entry(self)
+        self.host.insert(tk.END, self.host_name)
+        self.host.grid(row=1, column=0)
+
+        vcmdint = (self.root.register(self.validate_port),
+                    '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        
+        self.port=tk.Entry(self, validate="key", validatecommand=vcmdint)
+        self.port.grid(row=1, column=1)
+
+        self.connect_button=tk.Button(self, text="Set new host and port", command=self.set_host_and_port)
+        self.connect_button.grid(row=1, column=2)
+
         self.labels['cur_temp_text']=tk.Label(self, text='Current Temperature: ')
-        self.labels['cur_temp_text'].grid(row=0, column=0)
+        self.labels['cur_temp_text'].grid(row=2, column=0)
 
         self.labels['cur_temp_val']=tk.Label(self, text='0')
-        self.labels['cur_temp_val'].grid(row=0, column=1, columnspan=2)
+        self.labels['cur_temp_val'].grid(row=2, column=1, columnspan=2)
 
         self.labels['cur_target_text']=tk.Label(self, text='Current Target Temperature: ')
-        self.labels['cur_target_text'].grid(row=1, column=0) 
+        self.labels['cur_target_text'].grid(row=3, column=0) 
 
         self.labels['cur_target_val']=tk.Label(self, text='0')
-        self.labels['cur_target_val'].grid(row=1, column=1, columnspan=2)
+        self.labels['cur_target_val'].grid(row=3, column=1, columnspan=2)
         self.labels['new_target_text']=tk.Label(self, text='New Target Temperature: ')
-        self.labels['new_target_text'].grid(row=2, column=0)
+        self.labels['new_target_text'].grid(row=4, column=0)
         vcmd = (self.root.register(self.validate),
                     '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
         self.entry=tk.Entry(self, validate="key", validatecommand=vcmd)
-        self.entry.grid(row=2, column=1)
+        self.entry.grid(row=4, column=1)
+
         self.button=tk.Button(self, text='Set New Target Temperature', command=self.set_temperature)
-        self.button.grid(row=2, column=2)
+        self.button.grid(row=4, column=2)
         self.graph_frame=GraphFrame(self)
-        self.graph_frame.grid(row=4, column=0, columnspan=3)
+        self.graph_frame.grid(row=6, column=0, columnspan=3)
         self.graph_frame.grid_remove()
         self.show_graph=tk.Button(self, text='Show Graph', command=self.toggle_graph)
-        self.show_graph.grid(row=3, column=0, columnspan=3)
+        self.show_graph.grid(row=5, column=0, columnspan=3)
+
+    def set_host_and_port(self):
+        self.host_name=self.host.get()
+        self.port_num=int(self.port.get())
+        self.labels['server_settings']['text']="Server settings: [Hostname: {}, Port: {}]".format(self.host_name, self.port_num)
 
     def toggle_graph(self):
         if self.graph_hidden:
@@ -125,11 +160,11 @@ class App(tk.Frame):
             input_num=float(self_temp)
         except:
             input_num=0
-        set_temp(input_num)
+        set_temp(input_num, self.host_name, self.port_num)
 
     def update_values(self):
-        cur_temp, cur_temp_err = get_current_temp()  
-        cur_target, cur_target_err = get_target_temp()
+        cur_temp, cur_temp_err = get_current_temp(self.host_name, self.port_num)
+        cur_target, cur_target_err = get_target_temp(self.host_name, self.port_num)
         if cur_temp_err!=0:
             self.labels['cur_temp_val']['text']=errors[-1]
         else:
@@ -156,7 +191,17 @@ class App(tk.Frame):
                 return False
         else:
             return False
-
+    def validate_port(self, action, index, value_if_allowed,
+                       prior_value, text, validation_type, trigger_type, widget_name):
+        if text in '0123456789 ':
+            try:
+                if value_if_allowed!='':
+                    float(value_if_allowed)
+                return True
+            except ValueError:
+                return False
+        else:
+            return False
 if __name__=='__main__':
     root=tk.Tk()
     app=App(root)
