@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+
+from FridgeClient import *
+import argparse
+from socket import gethostname
+
+config=configparser.SafeConfigParser()
+config.read('fridge.config')
+
+settings=ConfigSectionMap("FridgeServer", config)
+
+FRIDGE_PORT=int(settings['port'])
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser(description="Command line interface to the fridge daemon")
+    parser.add_argument('--get-target', '-gt', action='store_true', help='Get the target temperature of the daemon')
+    parser.add_argument('--get-current', '-gc', action='store_true', help='Get the current temperature of the daemon')
+    parser.add_argument('--set-target', '-s', type=float, help='Set the current temperature of the daemon')
+    parser.add_argument('--port', '-p', type=int, default=FRIDGE_PORT, help='The port that the fridge server')
+    parser.add_argument('--host', '-a', type=str, default=gethostname(), help='The hostname/ip of the fridge server')
+    args=parser.parse_args()
+    print("Connecting with {} on port {}".format(args.host, args.port))
+    if args.get_target:
+        target_temp=get_target_temp(args.host, args.port)
+        if target_temp[1]!=-1:
+            print("Target temperature is currently: {}".format(target_temp[0]))
+        else:
+            print("Error getting target temperature. (Is server running?)")
+    if args.get_current:
+        current_temp=get_current_temp(args.host, args.port)
+        if current_temp[1]!=-1:
+            print("Current temperature is currently: {}".format(current_temp[0]))
+        else:
+            print("Error getting target temperature. (Is server running?)")
+    if args.set_target:
+        return_val=set_temp(args.set_target, args.host, args.port)
+        if return_val!=-1:
+            print("Set temperature to: {}".format(args.set_target))
+        else:
+            print("Error setting temperature. (Is server running?)")
