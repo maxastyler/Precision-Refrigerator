@@ -86,7 +86,11 @@ class FridgeServer:
                             elif message=='gtt':
                                 s.sendall(struct.pack('f', self.target_temp))
                             else:
-                                new_temp=struct.unpack('f', data)[0]
+                                try:
+                                    new_temp=struct.unpack('f', data)[0]
+                                except struct.error:
+                                    if args.verbose: print("Struct error. Setting the new temperature to 0")
+                                    new_temp=0
                                 if args.verbose: print("Setting new temperature {}".format(new_temp))
                                 self.target_temp=new_temp
                         finally:
