@@ -22,7 +22,7 @@ usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt
 
 def send_message(message, port=FRIDGE_PORT):
     sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address=('localhost', port)
+    server_address=('', port)
     try:
         sock.connect(server_address)
     except:
@@ -55,7 +55,7 @@ class FridgeServer:
         self.running=True
         sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_address=('localhost', FRIDGE_PORT)
+        server_address=('', FRIDGE_PORT)
         try:
             sock.bind(server_address)
             
@@ -148,7 +148,9 @@ if __name__=='__main__':
     parser.add_argument('--no-daemon', '-nd', action='store_true', help='Flag given when starting to keep the process in the terminal. No forking')
     parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
     parser.add_argument('--target-temp', '-t', type=float, default=INITIAL_TARGET_TEMP, help='Set the initial target temp for the daemon')
+    parser.add_argument('--port', '-p', type=int, default=FRIDGE_PORT, help='Set the port for the server to run on')
     args=parser.parse_args()
+    FRIDGE_PORT=args.port
     if args.option=="start":
         if not args.no_daemon:
             FridgeServer.daemonise()
@@ -156,9 +158,9 @@ if __name__=='__main__':
             a=FridgeServer()
             a.run()
     elif args.option=="stop":
-        send_message("stop")
+        send_message("stop", FRIDGE_PORT)
     elif args.option=="restart":
-        send_message("stop")
+        send_message("stop", FRIDGE_PORT)
         sleep(2)
         if not args.no_daemon:
             FridgeServer.daemonise()
