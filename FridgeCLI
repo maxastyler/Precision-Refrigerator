@@ -18,23 +18,30 @@ if __name__=='__main__':
     parser.add_argument('--set-target', '-s', type=float, help='Set the current temperature of the daemon')
     parser.add_argument('--port', '-p', type=int, default=FRIDGE_PORT, help='The port that the fridge server')
     parser.add_argument('--host', '-a', type=str, default=gethostname(), help='The hostname/ip of the fridge server')
+    parser.add_argument('--terse', '-t', action='store_true', help='Terse output. Easier formatting if used in other scripts')
     args=parser.parse_args()
-    print("Connecting with {} on port {}".format(args.host, args.port))
+    if not args.terse: print("Connecting with {} on port {}".format(args.host, args.port))
     if args.get_target:
         target_temp=get_target_temp(args.host, args.port)
         if target_temp[1]!=-1:
-            print("Target temperature is currently: {}".format(target_temp[0]))
+            if args.terse: print(target_temp[0])
+            else: print("Target temperature is currently: {}".format(target_temp[0]))
         else:
-            print("Error getting target temperature. (Is server running?)")
+            if args.terse: print("error")
+            else: print("Error getting target temperature. (Is server running?)")
     if args.get_current:
         current_temp=get_current_temp(args.host, args.port)
         if current_temp[1]!=-1:
-            print("Current temperature is currently: {}".format(current_temp[0]))
+            if args.terse: print(current_temp[0])
+            else: print("Current temperature is currently: {}".format(current_temp[0]))
         else:
-            print("Error getting target temperature. (Is server running?)")
+            if args.terse: print("error")
+            else: print("Error getting target temperature. (Is server running?)")
     if args.set_target:
         return_val=set_temp(args.set_target, args.host, args.port)
         if return_val!=-1:
-            print("Set temperature to: {}".format(args.set_target))
+            if args.terse: print(args.set_target)
+            else: print("Set temperature to: {}".format(args.set_target))
         else:
-            print("Error setting temperature. (Is server running?)")
+            if args.terse: print("error")
+            else: print("Error setting temperature. (Is server running?)")
