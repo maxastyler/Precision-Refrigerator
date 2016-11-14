@@ -140,8 +140,8 @@ class FridgeServer:
                     pass
 
     def daemonise():
+        if args.verbose: print("Daemonising")
         with daemon.DaemonContext():
-            if args.verbose: print("Daemonising")
             a=FridgeServer()
             a.run()
 
