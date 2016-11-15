@@ -8,7 +8,7 @@ import configparser
 plt.ion()
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-from time import time
+from time import time, sleep
 from queue import Queue
 from threading import Thread
 from socket import gethostname
@@ -200,23 +200,27 @@ class App(tk.Frame):
 
     def fetch_target(self):
         while True:
+            t_start=time()
             cur_target, cur_target_err = get_target_temp(self.host_name, self.port_num)
             if cur_target_err==0:
                 self.current_temp_queue.put((cur_target, time()-self.graph_frame.start_time))
             else:
                 self.current_temp_queue.put(-1)
             self.current_temp_queue.task_done()
-            sleep(UPDATE_INTERVAL_SEC)
+            t_sleep=UPDATE_INTERVAL_SEC-(time()-t_start)
+            if t_sleep>0: sleep(t_sleep)
 
     def fetch_current(self):
         while True:
+            t_start=time()
             cur_temp, cur_temp_err = get_current_temp(self.host_name, self.port_num)
             if cur_temp_err==0:
                 self.target_temp_queue.put((cur_temp, time()-self.graph_frame.start_time))
             else:
                 self.target_temp_queue.put(-1)
             self.target_temp_queue.task_done()
-            sleep(UPDATE_INTERVAL_SEC)
+            t_sleep=UPDATE_INTERVAL_SEC-(time()-t_start)
+            if t_sleep>0: sleep(t_sleep)
 
     def validate(self, action, index, value_if_allowed,
                        prior_value, text, validation_type, trigger_type, widget_name):

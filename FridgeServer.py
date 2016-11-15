@@ -6,7 +6,7 @@ import struct
 import argparse
 import select
 import configparser
-from time import sleep
+from time import time, sleep
 from helpers import *
 
 config=configparser.SafeConfigParser()
@@ -19,6 +19,7 @@ MESSAGE_SIZE=int(settings['message_size'])
 INITIAL_TARGET_TEMP=float(settings['initial_target_temp'])
 DAEMON_DELAY=float(settings['daemon_delay']) #Time that the daemon waits for new connections to the socket
 usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt the daemon"
+SIM_DELAY=0.5 #A simulated delay in reading the peltier
 
 def send_message(message, port=FRIDGE_PORT):
     sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -137,7 +138,8 @@ class FridgeServer:
                 try:
                     sock2.close()
                 except:
-                    pass
+                    pass    
+        sleep(SIM_DELAY)
 
     def daemonise():
         if args.verbose: print("Daemonising")
