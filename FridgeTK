@@ -6,14 +6,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import configparser
 plt.ion()
-matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 from time import time
+from queue import Queue
+from threading import Thread
 from socket import gethostname
 
 #Interval with which to update the GUI values
 UPDATE_INTERVAL=1000
+UPDATE_INTERVAL_SEC=UPDATE_INTERVAL/1000
 errors={}
 errors[-1]="Connection Error (Is FridgeServer running?)"
 
@@ -76,7 +78,19 @@ class App(tk.Frame):
 
         self.root=root
         super().__init__(root)
+
+        self.target_temp_queue=Queue()
+        self.current_temp_queue=Queue()
+
+        self.target_thread=Thread(target=self.fetch_target)
+        self.target_thread.setDaemon(True)
+        self.target_thread.start()
+        self.current_thread=Thread(target=self.fetch_current)
+        self.current_thread.setDaemon(True)
+        self.current_thread.start()
+
         self.init_UI()
+
         self.graph_hidden=True
 
     def init_UI(self):
@@ -163,22 +177,46 @@ class App(tk.Frame):
         set_temp(input_num, self.host_name, self.port_num)
 
     def update_values(self):
-        cur_temp, cur_temp_err = get_current_temp(self.host_name, self.port_num)
-        cur_target, cur_target_err = get_target_temp(self.host_name, self.port_num)
-        if cur_temp_err!=0:
-            self.labels['cur_temp_val']['text']=errors[-1]
-        else:
-            self.labels['cur_temp_val']['text']=float(cur_temp)
-            self.graph_frame.x_values.append(time()-self.graph_frame.start_time)
-            self.graph_frame.y_values.append(float(cur_temp))
-        if cur_target_err!=0:
-            self.labels['cur_target_val']['text']=errors[-1]
-        else:
-            self.labels['cur_target_val']['text']=float(cur_target)
-            self.graph_frame.x_t_values.append(time()-self.graph_frame.start_time)
-            self.graph_frame.y_t_values.append(float(cur_target))
+        while not self.current_temp_queue.empty():
+            val=self.current_temp_queue.get()
+            if val==-1:
+                self.labels['cur_temp_val']['text']=errors[-1]
+            else:
+                self.labels['cur_temp_val']['text']=float(val[0])
+                self.graph_frame.x_values.append(val[1])
+                self.graph_frame.y_values.append(float(val[0]))
+
+        while not self.target_temp_queue.empty():
+            val=self.target_temp_queue.get()
+            if val==-1:
+                self.labels['cur_target_val']['text']=errors[-1]
+            else:
+                self.labels['cur_target_val']['text']=float(val[0])
+                self.graph_frame.x_t_values.append(val[1])
+                self.graph_frame.y_t_values.append(float(val[0]))  
+
         self.graph_frame.update_graph()
         self.root.after(UPDATE_INTERVAL, self.update_values)
+
+    def fetch_target(self):
+        while True:
+            cur_target, cur_target_err = get_target_temp(self.host_name, self.port_num)
+            if cur_target_err==0:
+                self.current_temp_queue.put((cur_target, time()-self.graph_frame.start_time))
+            else:
+                self.current_temp_queue.put(-1)
+            self.current_temp_queue.task_done()
+            sleep(UPDATE_INTERVAL_SEC)
+
+    def fetch_current(self):
+        while True:
+            cur_temp, cur_temp_err = get_current_temp(self.host_name, self.port_num)
+            if cur_temp_err==0:
+                self.target_temp_queue.put((cur_temp, time()-self.graph_frame.start_time))
+            else:
+                self.target_temp_queue.put(-1)
+            self.target_temp_queue.task_done()
+            sleep(UPDATE_INTERVAL_SEC)
 
     def validate(self, action, index, value_if_allowed,
                        prior_value, text, validation_type, trigger_type, widget_name):
