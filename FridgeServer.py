@@ -8,6 +8,8 @@ import select
 import configparser
 from time import time, sleep
 from helpers import *
+from w1thermsensor import W1ThermSensor
+import RPi.GPIO as GPIO
 
 config=configparser.SafeConfigParser()
 config.read('fridge.config')
@@ -19,7 +21,11 @@ MESSAGE_SIZE=int(settings['message_size'])
 INITIAL_TARGET_TEMP=float(settings['initial_target_temp'])
 DAEMON_DELAY=float(settings['daemon_delay']) #Time that the daemon waits for new connections to the socket
 usage_string="Usage:\nstart - start/restart the daemon\n(halt/quit/close) - halt the daemon"
-SIM_DELAY=0.5 #A simulated delay in reading the peltier
+SIM_DELAY=2.5 #A simulated delay in reading the peltier
+
+def setup_GPIO(pin):
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(pin, GPIO.OUT)
 
 def send_message(message, port=FRIDGE_PORT):
     sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,6 +46,10 @@ class FridgeServer:
         self.running=False
         self.current_temp=0
         self.target_temp=args.target_temp
+        self.sensor=W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, args.temp_sensor)
+        self.pin=args.gpio_pin
+        self.pin_mode=0
+        setup_GPIO(self.pin)
 
     def get_message(self, connection):
         try:
@@ -103,9 +113,28 @@ class FridgeServer:
         finally:
             if args.verbose: print("Closing socket")
             sock.close()
+            if args.verbose: print("Turning off GPIO pin")
+            self.change_pin(0)
+
+    def change_pin(self, value):
+        if value==1: 
+            if args.verbose: print("Turning pin on")
+            GPIO.output(self.pin, GPIO.HIGH)
+            self.pin_mode=1
+        else: 
+            if args.verbose: print("Turning pin off")
+            GPIO.output(self.pin, GPIO.LOW)
+            self.pin_mode=0
 
     def update_peltier(self):
         cur_tar_temp=self.target_temp
+        self.current_temp=self.sensor.get_temperature()
+        if self.current_temp>cur_tar_temp and self.pin_mode==0:
+            self.change_pin(1)
+        elif self.current_temp<cur_tar_temp and self.pin_mode==1:
+            self.change_pin(0)
+        
+        """
         try:
             sock=socket.create_connection(('localhost', 10001))
             sock.sendall("gct".encode())
@@ -140,6 +169,7 @@ class FridgeServer:
                 except:
                     pass    
         sleep(SIM_DELAY)
+        """
 
     def daemonise():
         if args.verbose: print("Daemonising")
@@ -155,6 +185,8 @@ if __name__=='__main__':
     parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
     parser.add_argument('--target-temp', '-t', type=float, default=INITIAL_TARGET_TEMP, help='Set the initial target temp for the daemon')
     parser.add_argument('--port', '-p', type=int, default=FRIDGE_PORT, help='Set the port for the server to run on')
+    parser.add_argument('--temp-sensor', '-te', type=str, default="000006cae9dd", help='Set the temperature sensor')
+    parser.add_argument('--gpio-pin', '-gp', type=int, default=19, help="The pin that the peltier is dependent on")
     args=parser.parse_args()
     FRIDGE_PORT=args.port
     if args.option=="start":

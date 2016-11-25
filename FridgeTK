@@ -82,14 +82,14 @@ class App(tk.Frame):
         self.target_temp_queue=Queue()
         self.current_temp_queue=Queue()
 
+        self.init_UI()
+
         self.target_thread=Thread(target=self.fetch_target)
         self.target_thread.setDaemon(True)
         self.target_thread.start()
         self.current_thread=Thread(target=self.fetch_current)
         self.current_thread.setDaemon(True)
         self.current_thread.start()
-
-        self.init_UI()
 
         self.graph_hidden=True
 
@@ -203,10 +203,10 @@ class App(tk.Frame):
             t_start=time()
             cur_target, cur_target_err = get_target_temp(self.host_name, self.port_num)
             if cur_target_err==0:
-                self.current_temp_queue.put((cur_target, time()-self.graph_frame.start_time))
+                self.target_temp_queue.put((cur_target, time()-self.graph_frame.start_time))
             else:
-                self.current_temp_queue.put(-1)
-            self.current_temp_queue.task_done()
+                self.target_temp_queue.put(-1)
+            self.target_temp_queue.task_done()
             t_sleep=UPDATE_INTERVAL_SEC-(time()-t_start)
             if t_sleep>0: sleep(t_sleep)
 
@@ -215,10 +215,10 @@ class App(tk.Frame):
             t_start=time()
             cur_temp, cur_temp_err = get_current_temp(self.host_name, self.port_num)
             if cur_temp_err==0:
-                self.target_temp_queue.put((cur_temp, time()-self.graph_frame.start_time))
+                self.current_temp_queue.put((cur_temp, time()-self.graph_frame.start_time))
             else:
-                self.target_temp_queue.put(-1)
-            self.target_temp_queue.task_done()
+                self.current_temp_queue.put(-1)
+            self.current_temp_queue.task_done()
             t_sleep=UPDATE_INTERVAL_SEC-(time()-t_start)
             if t_sleep>0: sleep(t_sleep)
 
