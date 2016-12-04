@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-
+#####################
+#
+#Fridge client for command line controlling of the fridge server
+#
+#####################
 from FridgeClient import *
 import argparse
 from socket import gethostname

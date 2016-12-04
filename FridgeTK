@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#################
+#
+#Fridge tk interface for controlling a peltier device
+#
+#################
 import tkinter as tk
 from FridgeClient import *
 import matplotlib
