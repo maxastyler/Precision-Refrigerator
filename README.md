@@ -16,6 +16,20 @@ The FridgeCLI program can set the target temperature of the server, and can also
 
 To get more specific help with each program, the -h flag can be used when running to print all available options. 
 
+## Quick Usage Example
+Run the FridgeServer.py class as a daemon
+'''
+./FridgeServer.py
+'''
+Now run FridgeTK to connect to this running daemon.
+'''
+./FridgeTK
+'''
+Once you're done with FridgeTK, shutdown the daemon.
+'''
+./FridgeServer.py stop
+'''
+
 # Requirements
 This project runs with python3
 
