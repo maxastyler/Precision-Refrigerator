@@ -1,7 +1,5 @@
 # Precision-Refrigerator
-Code for controlling a Peltier thermoelectric device with two temperature sensors.
-
-Run the daemon, FridgeServer.py and connect with some program using the methods in FridgeClient to fetch data and set a target temperature. 
+Code for controlling a Peltier thermoelectric device with two temperature sensors. A server is set up which interacts with a thermometer and peltier device to read and control the current temperature a beaker of water. This server then connects to clients, and transfers information using sockets. Two example clients are written, one for command line and one with a multi-threaded GUI. This GUI graphs the data coming in, and can save the saved data into a numpy formatted plain text file.
 
 A little beaker simulator (BeakerSim.py) allows testing of the daemon interface.
 
@@ -19,9 +17,18 @@ The FridgeCLI program can set the target temperature of the server, and can also
 To get more specific help with each program, the -h flag can be used when running to print all available options. 
 
 # Requirements
+This project runs with python3
+
 Here are the requirements for each class:
 - FridgeServer.py
   - python-daemon
   - RPi.GPIO
   - w1thermsensor
-- Test
+- BeakerSim.py
+  - python-daemon
+- FridgeTK
+  - tk
+  - matplotlib
+  - numpy
+  
+These dependencies can be installed using python-pip, with the exception of tk which is installed through the package manager/compiled for your system (eg. pacman -S tk)
