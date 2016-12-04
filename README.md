@@ -21,7 +21,7 @@ To get more specific help with each program, the -h flag can be used when runnin
 # Requirements
 Here are the requirements for each class:
 *FridgeServer.py
- *python-daemon
- *RPi.GPIO
- *w1thermsensor
+  *python-daemon
+  *RPi.GPIO
+  *w1thermsensor
 *Test
