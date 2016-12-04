@@ -14,7 +14,7 @@ It plots the target temperature and current temperature of the water, and this d
 
 The FridgeCLI program can set the target temperature of the server, and can also read its current state and outputs to the terminal. 
 
-To get more specific help with each program, the -h flag can be used when running to print all available options. 
+To get more specific help with each program, the `-h` flag can be used when running to print all available options. 
 
 ## Quick Usage Example
 Run the FridgeServer.py class as a daemon
