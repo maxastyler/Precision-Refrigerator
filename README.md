@@ -19,7 +19,7 @@ To get more specific help with each program, the -h flag can be used when runnin
 ## Quick Usage Example
 Run the FridgeServer.py class as a daemon
 ```
-./FridgeServer.py
+./FridgeServer.py start
 ```
 Now run FridgeTK to connect to this running daemon.
 ```
@@ -29,6 +29,26 @@ Once you're done with FridgeTK, shutdown the daemon.
 ```
 ./FridgeServer.py stop
 ```
+## Running without Thermometer
+Here's an example to run without a thermometer and with a verbose FridgeServer.py
+Start the beaker simulator daemon.
+```
+./BeakerSim.py start
+```
+Start FridgeServer.py in no daemon mode, with verbose output and using the beaker simulator.
+```
+./FridgeServer.py start -nd -v -s
+```
+Start FridgeTK in another terminal.
+```
+./FridgeTK
+```
+Once done with all that, send a shutdown message to FridgeServer.py, or just ctrl-c it.
+Stop the BeakerSim.py daemon.
+```
+./BeakerSim.py stop
+```
+
 # Requirements
 This project runs with python3
 
