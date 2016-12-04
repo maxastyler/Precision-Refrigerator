@@ -184,13 +184,13 @@ class FridgeServer:
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description='Daemon to control Refrigerator')
+    parser=argparse.ArgumentParser(description='Daemon to control a Refrigerator')
     parser.add_argument('option', choices=['start', 'restart', 'stop'], help='Option to give the daemon')
     parser.add_argument('--no-daemon', '-nd', action='store_true', help='Flag given when starting to keep the process in the terminal. No forking')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the daemon print out what it\'s doing')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Option to make the server print out what it\'s doing. Only useful when the -nd option is set')
     parser.add_argument('--target-temp', '-t', type=float, default=INITIAL_TARGET_TEMP, help='Set the initial target temp for the daemon')
     parser.add_argument('--port', '-p', type=int, default=FRIDGE_PORT, help='Set the port for the server to run on')
-    parser.add_argument('--temp-sensor', '-te', type=str, default="000006cae9dd", help='Set the temperature sensor')
+    parser.add_argument('--temp-sensor', '-te', type=str, default="000006cae9dd", help='The ID of the temperature sensor as found in /sys/class/w1/devices, without the "10-" prefix')
     parser.add_argument('--gpio-pin', '-gp', type=int, default=19, help="The pin that the peltier is dependent on")
     parser.add_argument('--simulated', '-s', action='store_true', help="If this argument is given, the server will connect with a BeakerSim daemon instead of using the thermometer")
     args=parser.parse_args()
