@@ -37,6 +37,25 @@ def fit_temp_drop_curve():
     x=np.linspace(11.90, 12.05, 100)
     y=[chi_fun([27.847, 0.00148282, xs])/len(values[0]) for xs in x]
     plt.plot(x, y)
+    plt.ylabel(r'Reduced $\chi^2$')
+    plt.xlabel(r'Temperature $(\degree\mathrm{C})$')
+    plt.show()
+
+def fit_temp_drop_curve2():
+    my_data=np.loadtxt("40to12")
+
+    values=[[], []]
+    my_data=[my_data[0], my_data[1]]
+    for i in range(len(my_data[0])):
+        if my_data[0][i]>47:
+            values[0].append(my_data[0][i])
+            values[1].append(my_data[1][i])
+    a=curve_fit(exp2, values[0], values[1], [27, 0.1, 12])
+    y=[exp2(i, a[0][0], a[0][1], a[0][2]) for i in values[0]]
+    plt.plot(values[0], y)
+    plt.plot(values[0], values[1])
+    plt.xlabel(r'Time $(s)$')
+    plt.ylabel(r'Temperature $(\degree\mathrm{C})$')
     plt.show()
 
 def fit_sin_curve():
@@ -51,16 +70,19 @@ def fit_sin_curve():
     y=[sine2(i, *fitted[0]) for i in x]
     plt.plot(x, y)
     plt.plot(my_data[0], my_data[1])
+    plt.xlabel(r'Time $(s)$')
+    plt.ylabel(r'Temperature $(\degree\mathrm{C})$')
     plt.show()
 
-#my_data=np.loadtxt('target_16')
-#
-#chi_fun=chi_squared(my_data, sine)
-#print(len(my_data[0]))
-#
-#x=np.linspace(0.0425, 0.048, 100)
-#y=[chi_fun([0.19, xs, 140.4, 16.04])/len(my_data[0]) for xs in x]
-#plt.plot(x, y)
-#plt.show()
+my_data=np.loadtxt('target_16')
 
-fit_temp_drop_curve()
+chi_fun=chi_squared(my_data, sine)
+print(len(my_data[0]))
+
+x=np.linspace(0.043, 0.048, 100)
+y=[chi_fun([0.19977, xs, 140.496, 16.047])/len(my_data[0]) for xs in x]
+plt.plot([2*np.pi/i for i in x], y)
+plt.ylabel(r'Reduced $\chi^2$')
+plt.xlabel(r'Period $(s)$')
+plt.show()
+
